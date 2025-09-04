@@ -1,0 +1,16 @@
+service: xml-transformer
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+
+functions:
+  transform:
+    handler: handler.transform
+    events:
+      - http:
+          path: transform
+          method: post
+          cors: true
+
