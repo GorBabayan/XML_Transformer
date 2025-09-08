@@ -1,7 +1,22 @@
 import { parseStringPromise, Builder } from "xml2js";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 export const transform = async (event) => {
     try {
+
+        if (event.httpMethod === "OPTIONS") {
+            return {
+                statusCode: 200,
+                headers: CORS_HEADERS,
+                body: "",
+            };
+        }
+
         if (!event.body) {
             return {
                 statusCode: 400,
@@ -36,9 +51,12 @@ export const transform = async (event) => {
         let goods = Array.isArray(goodsArray) ? goodsArray : [goodsArray];
 
         goods = goods.map(good => {
-            if (good.Description) {
+            if (good.Description.startsWith("Տոմատի մածուկ")) {
                 const { Description, ...rest } = good;
-                return { Description, ClassifierCode: "0000", ...rest };
+                return { Description, ClassifierCode: "2002", ...rest };
+            } else if (good.Description.startsWith("Կոնյակ")) {
+                const { Description, ...rest } = good;
+                return { Description, ClassifierCode: "2208", ...rest };
             } else {
                 return { ...good, ClassifierCode: "0000" };
             }
@@ -51,7 +69,7 @@ export const transform = async (event) => {
 
         return {
             statusCode: 200,
-            headers: { "Content-Type": "application/xml" },
+            headers: { ...CORS_HEADERS, "Content-Type": "application/xml" },
             body: outputXml,
         }
     } catch(err) {
