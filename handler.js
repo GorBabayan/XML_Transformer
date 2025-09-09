@@ -1,4 +1,5 @@
 import { parseStringPromise, Builder } from "xml2js";
+import { classifierMap } from "./classifierMap.js";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -20,6 +21,7 @@ export const transform = async (event) => {
         if (!event.body) {
             return {
                 statusCode: 400,
+                headers: CORS_HEADERS,
                 body: JSON.stringify({ message: "Body is empty" }),
             }
         }
@@ -30,10 +32,16 @@ export const transform = async (event) => {
 
         let obj;
         try {
-            obj = await parseStringPromise(inputXml, { explicitArray: false, ignoreAttrs: false, xmlns: false });
+            obj = await parseStringPromise(inputXml, { 
+                explicitArray: false, 
+                ignoreAttrs: false, 
+                trim: true,
+                mergeAttrs: true,
+            });
         } catch(err) {
             return {
                 statusCode: 400,
+                headers: CORS_HEADERS,
                 body: JSON.stringify({ message: "Xml is invalid" }),
             }
         }
@@ -44,27 +52,33 @@ export const transform = async (event) => {
         if (!goodsArray) {
             return {
                 statusCode: 400,
+                headers: CORS_HEADERS,
                 body: JSON.stringify({ message: "No goods found" }),
             }
         }
 
         let goods = Array.isArray(goodsArray) ? goodsArray : [goodsArray];
 
-        goods = goods.map(good => {
-            if (good.Description.startsWith("Տոմատի մածուկ")) {
-                const { Description, ...rest } = good;
-                return { Description, ClassifierCode: "2002", ...rest };
-            } else if (good.Description.startsWith("Կոնյակ")) {
-                const { Description, ...rest } = good;
-                return { Description, ClassifierCode: "2208", ...rest };
-            } else {
-                return { ...good, ClassifierCode: "0000" };
-            }
+        goods = goods.map(good => { 
+            const desc = good.Description?.trim(); 
+            const code = classifierMap[desc]; 
+            
+            if (code) { 
+                const { Description, ...rest} = good; 
+                return { Description, ClassifierCode: code, ...rest }; 
+            } else { 
+                const { Description, ClassifierCode = "0000", ...rest } = good; 
+                return { Description, ClassifierCode, ...rest }; 
+            } 
         });
 
         invoice.GoodsInfo.Good = goods;
 
-        const builder = new Builder({ xmldec: { version: "1.0", encoding: "UTF-8" }});
+        const builder = new Builder({ 
+            xmldec: { version: "1.0", encoding: "UTF-8" },
+            renderOpts: { pretty: true },
+            headless: false,
+        });
         const outputXml = builder.buildObject(obj);
 
         return {
@@ -76,6 +90,7 @@ export const transform = async (event) => {
         console.error("Transformation error: ", err);
         return {
             statusCode: 400,
+            headers: CORS_HEADERS,
             body: JSON.stringify({ message: err.message }),
         }
     }
