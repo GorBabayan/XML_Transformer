@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>XML Transformer</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; }
+  button { padding: 8px 16px; margin-top: 10px; }
+  .error { color: red; }
+  .success { color: green; }
+</style>
+</head>
+<body>
+<h2>XML Transformer</h2>
+
+<input type="file" id="fileInput" accept=".xml" />
+<button id="transformBtn">Transform</button>
+
+<p class="error" id="error"></p>
+
+<label>Output XML:</label>
+<textarea id="outputXml" rows="15" readonly style="width:100%; box-sizing:border-box;"></textarea>
+
+<script>
+  const fileInput = document.getElementById('fileInput');
+  const transformBtn = document.getElementById('transformBtn');
+  const outputXml = document.getElementById('outputXml');
+  const errorEl = document.getElementById('error');
+
+  transformBtn.addEventListener('click', async () => {
+    errorEl.textContent = '';
+    outputXml.value = '';
+
+    const file = fileInput.files[0];
+    if (!file) {
+      errorEl.textContent = 'Please select an XML file';
+      return;
+    }
+
+    try {
+      const xml = await file.text(); 
+
+      const res = await fetch('https://mtlo4cohy6.execute-api.us-east-1.amazonaws.com/dev/transform', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/xml' },
+        body: xml
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        errorEl.textContent = err || 'Transformation failed';
+        return;
+      }
+
+      const transformedXml = await res.text();
+      outputXml.value = transformedXml;
+
+    } catch (err) {
+      errorEl.textContent = err.message || 'Something went wrong';
+    }
+  });
+</script>
+</body>
+</html>

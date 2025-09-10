@@ -12,5 +12,9 @@ functions:
       - http:
           path: transform
           method: post
-          cors: true
+          cors: 
+            origin: '*'
+            headers:  
+              - Content-Type
+            allowCredentials: false
 
