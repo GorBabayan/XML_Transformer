@@ -1,64 +1,195 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="hy">
 <head>
-<meta charset="UTF-8">
-<title>XML Transformer</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ՀԴՄ Կոդերի Ավելացման Գործիք</title>
 <style>
-  body { font-family: Arial, sans-serif; padding: 20px; }
-  button { padding: 8px 16px; margin-top: 10px; }
-  .error { color: red; }
-  .success { color: green; }
+    :root{
+        --bg:#f6f9ff;
+        --panel:#ffffff;
+        --ink:#0b1b30;
+        --muted:#5a6c85;
+        --accent:#2c7dff;
+        --accent-2:#5aa0ff;
+        --ok:#19b36b;
+        --warn:#ffb300;
+        --error:#e05757;
+        --ring: rgba(44,125,255,.25);
+        --shadow: 0 10px 30px rgba(28,74,160,.12);
+        --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+        margin:0; background:linear-gradient(140deg,#eef4ff 0%, #f7fbff 45%, #eef6ff 100%);
+        color:var(--ink);
+        font:16px/1.5 Inter,system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans",Arial;
+    }
+    .wrap{ max-width:920px; margin:48px auto; padding:0 20px; }
+    .hero{
+        background: radial-gradient(1200px 400px at 10% -10%, #eaf2ff, transparent 60%),
+                    radial-gradient(900px 300px at 110% -20%, #e9f7ff, transparent 60%),
+                    var(--panel);
+        border:1px solid #e7eefc; border-radius:var(--radius);
+        box-shadow:var(--shadow);
+        padding:28px;
+    }
+    .title{ display:flex; align-items:center; gap:14px; margin:0 0 8px;
+            font-size:22px; font-weight:800; letter-spacing:.2px; }
+    .title .logo{
+        width:38px; height:38px; border-radius:12px;
+        display:grid; place-items:center;
+        background:linear-gradient(160deg,var(--accent),var(--accent-2));
+        color:white; box-shadow:0 8px 18px rgba(44,125,255,.35);
+    }
+    .subtitle{ margin:0 0 18px; color:var(--muted) }
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px }
+    .full{ grid-column:1/-1 }
+    .card{ background:var(--panel); border:1px solid #e9effa; border-radius:14px; padding:16px; }
+    label{ display:block; font-weight:700; margin-bottom:10px; color:#2e3e57 }
+    input[type=file]{
+        width:100%; padding:14px; border-radius:12px;
+        border:1.5px dashed #cfe0ff; background:#f7fbff; color:#18314a;
+        transition:border-color .2s, box-shadow .2s, background .2s;
+    }
+    input[type=file]:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 6px var(--ring) }
+    .buttons{ display:flex; gap:10px; flex-wrap:wrap }
+    button{
+        border:0; border-radius:12px; padding:12px 16px; font-weight:800; cursor:pointer;
+        background:linear-gradient(160deg,var(--accent),var(--accent-2)); color:white;
+        box-shadow:0 8px 18px rgba(44,125,255,.25); transition:transform .05s ease, filter .2s ease;
+    }
+    button:disabled{ filter:saturate(.35) brightness(.9); cursor:not-allowed; box-shadow:none }
+    button:active{ transform:translateY(1px) }
+    .ghost{ background:white; color:var(--ink); border:1px solid #e4ebfb; box-shadow:none; }
+    .status{ margin-top:8px; color:var(--muted); font-size:14px; padding-top: 8px }
+    .kbd{ font-family:ui-monospace,Menlo,Consolas,monospace; background:#f0f6ff;
+          border:1px solid #d9e6ff; padding:2px 6px; border-radius:6px; color:#1f3352 }
+    .alert{ padding:10px 12px; border-radius:10px; background:#f7fbff; border:1px solid #e1edff; }
+    .alert.ok{ background:#f5fff9; border-color:#d9f6e8; color:#0c6a3c }
+    .alert.warn{ background:#fffaf0; border-color:#ffe9b8; color:#865f00 }
+    .alert.err{ background:#fff5f5; border-color:#ffd6d6; color:#9a2c2c }
+    .loader{ display:none; align-items:center; gap:10px; margin-top:10px; }
+    .spinner{
+        width:18px; height:18px; border:3px solid #d7e7ff; border-top-color:var(--accent);
+        border-radius:50%; animation:spin 1s linear infinite;
+    }
+    @keyframes spin{ to{ transform:rotate(360deg) } }
+    .count{ font-variant-numeric:tabular-nums; font-weight:800; color:#153560 }
+    .footer-note{ margin-top:14px; color:#6e7f9a; font-size:13px }
 </style>
 </head>
 <body>
-<h2>XML Transformer</h2>
-
-<input type="file" id="fileInput" accept=".xml" />
-<button id="transformBtn">Transform</button>
-
-<p class="error" id="error"></p>
-
-<label>Output XML:</label>
-<textarea id="outputXml" rows="15" readonly style="width:100%; box-sizing:border-box;"></textarea>
+<div class="wrap">
+    <section class="hero">
+        <h1 class="title">
+            <span class="logo" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </span>
+            ՀԴՄ Կոդերի Ավելացման Գործիք
+        </h1>
+        <div class="grid">
+            <div class="card">
+                <label for="xmlFile">XML ֆայլի բեռնում</label>
+                <input id="xmlFile" type="file" accept=".xml,text/xml" />
+                <div id="xmlStatus" class="status">Ֆայլը դեռ չի ընտրված։</div>
+                <!-- <div id="transformStatus" class="status"></div> -->
+              </div>
+              
+              <div class="card">
+                <label>Գործողություններ</label>
+                <div class="buttons">
+                  <button id="btnUpload" disabled>Ավելացնել Կոդերը և ներբեռնել</button>
+                  <button id="btnReset" class="ghost">Մաքրել</button>
+                </div>
+                <div id="runStatus" class="status">Վերբեռնեք XML ֆայլը՝ գործընթացը սկսելու համար։</div>
+                <div id="loader" class="loader">
+                  <div class="spinner"></div>
+                  <div class="status">Փոխակերպվում է <span class="count" id="count">...</span></div>
+                </div>
+                </div>
+            </div>
+            <div id="transformStatus" class="status"></div>
+        </div>
+    </section>
+</div>
 
 <script>
-  const fileInput = document.getElementById('fileInput');
-  const transformBtn = document.getElementById('transformBtn');
-  const outputXml = document.getElementById('outputXml');
-  const errorEl = document.getElementById('error');
+(() => {
+    const xmlFileEl   = document.getElementById('xmlFile');
+    const xmlStatus   = document.getElementById('xmlStatus');
+    const runStatus   = document.getElementById('runStatus');
+    const loader      = document.getElementById('loader');
+    const countdownEl = document.getElementById('count');
+    const btnUpload   = document.getElementById('btnUpload');
+    const btnReset    = document.getElementById('btnReset');
+    const transformStatus = document.getElementById('transformStatus');
 
-  transformBtn.addEventListener('click', async () => {
-    errorEl.textContent = '';
-    outputXml.value = '';
+    let fileData = null;
+    let fileName = 'input.xml';
 
-    const file = fileInput.files[0];
-    if (!file) {
-      errorEl.textContent = 'Please select an XML file';
-      return;
-    }
+    xmlFileEl.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) { 
+            xmlStatus.textContent = 'Ֆայլը դեռ չի ընտրված։'; 
+            btnUpload.disabled = true; 
+            return; 
+        }
+        fileData = file;
+        fileName = file.name;
+        xmlStatus.innerHTML = `<b>Բեռնված է՝</b> ${fileName}`;
+        btnUpload.disabled = false;
+        runStatus.textContent = 'Պատրաստ է ավելացնելու համար։ Սեղմեք «Ավելացնել Կոդերը և ներբեռնել»։';
+    });
+
+    btnUpload.addEventListener('click', async () => {
+    if (!fileData) return;
+
+    btnUpload.disabled = true;
+    loader.style.display = 'flex';
+    countdownEl.textContent = '...'; 
+    transformStatus.textContent = '';
 
     try {
-      const xml = await file.text(); 
+        const xmlText = await fileData.text();
 
-      const res = await fetch('https://mtlo4cohy6.execute-api.us-east-1.amazonaws.com/dev/transform', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/xml' },
-        body: xml
-      });
+        const response = await fetch(
+            'https://12sd9wt987.execute-api.us-east-1.amazonaws.com/dev/transform',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/xml' },
+                body: xmlText
+            }
+        );
 
-      if (!res.ok) {
-        const err = await res.text();
-        errorEl.textContent = err || 'Transformation failed';
-        return;
-      }
+        if (!response.ok) throw new Error('Սերվերային սխալ՝ ֆայլը չվերափոխվեց։');
 
-      const transformedXml = await res.text();
-      outputXml.value = transformedXml;
+        const blob = await response.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'transformed_' + fileName;
+        a.click();
 
+        transformStatus.innerHTML = `<span class="alert ok">Ֆայլը հաջողությամբ վերափոխվեց և ներբեռնվեց։</span>`;
     } catch (err) {
-      errorEl.textContent = err.message || 'Something went wrong';
+        console.error(err);
+        transformStatus.innerHTML = `<span class="alert err">${err.message}</span>`;
+    } finally {
+        loader.style.display = 'none';
+        btnUpload.disabled = false;
     }
-  });
+});
+
+
+    btnReset.addEventListener('click', () => {
+        xmlFileEl.value = '';
+        xmlStatus.textContent = 'Ֆայլը դեռ չի ընտրված։';
+        runStatus.textContent = 'Վերբեռնեք XML ֆայլը՝ գործընթացը սկսելու համար։';
+        btnUpload.disabled = true;
+    });
+})();
 </script>
 </body>
 </html>
