@@ -66,10 +66,7 @@ export const transform = async (event) => {
             if (code) { 
                 const { Description, ...rest} = good; 
                 return { Description, ClassifierCode: code, ...rest }; 
-            } else { 
-                const { Description, ClassifierCode = "0000", ...rest } = good; 
-                return { Description, ClassifierCode, ...rest }; 
-            } 
+            }
         });
 
         invoice.GoodsInfo.Good = goods;
